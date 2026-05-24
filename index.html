@@ -57,11 +57,9 @@ body { background: transparent; }
 #panel {
   display: none;
   position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 10px;
-  padding: 16px 22px;
+  width: 44%;
+  max-width: 460px;
+  padding: 14px 20px;
   background: rgba(249, 248, 245, 0.82);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -74,11 +72,15 @@ body { background: transparent; }
 }
 @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 #panel.open { display: block; }
+#panel.pos-tl { top: 4%;   left: 4%;  right: auto; bottom: auto; }
+#panel.pos-tr { top: 4%;   right: 4%; left: auto;  bottom: auto; }
+#panel.pos-bl { bottom: 4%; left: 4%; right: auto; top: auto;    }
+#panel.pos-br { bottom: 4%; right: 4%; left: auto; top: auto;    }
 #panel-close { position:absolute; top:12px; right:16px; cursor:pointer; background:none; border:none; font-size:1.1rem; color:#888; }
 #panel-title { font-family:"Playfair Display",serif; font-weight:600; font-size:1.1rem; color:#001f3f; margin-bottom:8px; padding-right: 24px; }
 #panel-body  {
-  font-family:Georgia,serif; font-size:0.9rem; color:#333; line-height:1.7;
-  max-height: 220px;
+  font-family:Georgia,serif; font-size:0.9rem; color:#333; line-height:1.6;
+  max-height: 190px;
   overflow-y: auto;
   padding-right: 16px;
   white-space: pre-line;
@@ -450,12 +452,26 @@ function reset() {
 }
 
 // ── PANEL ──
+// Card placement per trigger — opposite corner from the element so the card
+// never covers the graphic the user is hovering/clicking.
+const CARD_POS = {
+  intro: 'br',
+  rep: 'br', auth: 'br', national: 'br',
+  fed: 'tr', maj: 'tr', democratic: 'tr',
+  ci: 'br', lib: 'br', liberty: 'br',
+  me: 'bl', eq: 'bl', equality: 'bl',
+};
+const POS_CLASSES = ['pos-tl','pos-tr','pos-bl','pos-br'];
+
 function openPanel(id) {
   const d = CONTENT[id];
   if(!d) return;
   g('panel-title').textContent = d.title;
   g('panel-body').textContent  = d.body;
-  g('panel').classList.add('open');
+  const panel = g('panel');
+  POS_CLASSES.forEach(c => panel.classList.remove(c));
+  panel.classList.add('pos-' + (CARD_POS[id] || 'br'));
+  panel.classList.add('open');
 }
 function hidePanel() {
   g('panel').classList.remove('open');
@@ -465,9 +481,20 @@ function closePanel() {
   reset();
   hidePanel();
 }
+
+// Grace period so the user can move the cursor from a trigger to the card
+// without the card vanishing mid-traverse.
+let hideTimer = null;
+function scheduleHide() {
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => { if(!locked) { reset(); hidePanel(); } }, 220);
+}
+function cancelHide() { clearTimeout(hideTimer); }
+
 g('panel-close').addEventListener('click', e => { e.stopPropagation(); closePanel(); });
 g('panel').addEventListener('click', e => { e.stopPropagation(); });
-g('panel').addEventListener('mouseenter', () => { /* keep card visible while pointer is over it */ });
+g('panel').addEventListener('mouseenter', cancelHide);
+g('panel').addEventListener('mouseleave', scheduleHide);
 
 // ── HELPER: highlight one cardinal, dim others ──
 function highlightCardinal(id) {
@@ -488,6 +515,7 @@ function highlightCardinal(id) {
 ['auth','maj','lib','eq'].forEach(id => {
   const el = g(id);
   el.addEventListener('mouseenter', () => {
+    cancelHide();
     if(locked) return;
     reset();
     // Stretch relevant arrow
@@ -513,7 +541,7 @@ function highlightCardinal(id) {
     });
     openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) { reset(); hidePanel(); } });
+  el.addEventListener('mouseleave', () => { if(!locked) reset(); scheduleHide(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === id) { closePanel(); return; }
@@ -527,6 +555,7 @@ function highlightCardinal(id) {
   const el = g(cid);
   if(!el) return;
   el.addEventListener('mouseenter', () => {
+    cancelHide();
     if(locked) return;
     reset();
     g('flag-circle').classList.add('pulsing');
@@ -538,7 +567,7 @@ function highlightCardinal(id) {
     ['auth','maj','lib','eq'].forEach(id => { g(id).style.opacity = '0.3'; });
     openPanel('intro');
   });
-  el.addEventListener('mouseleave', () => { if(!locked) { reset(); hidePanel(); } });
+  el.addEventListener('mouseleave', () => { if(!locked) reset(); scheduleHide(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === 'intro') { closePanel(); return; }
@@ -551,12 +580,13 @@ function highlightCardinal(id) {
 ['rep','fed','ci','me'].forEach(id => {
   const el = g(id);
   el.addEventListener('mouseenter', () => {
+    cancelHide();
     if(locked) return;
     reset();
     highlightCardinal(id);
     openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) { reset(); hidePanel(); } });
+  el.addEventListener('mouseleave', () => { if(!locked) reset(); scheduleHide(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === id) { closePanel(); return; }
@@ -577,10 +607,11 @@ function highlightCardinal(id) {
   const el = g(elId);
   if(!el) return;
   el.addEventListener('mouseenter', () => {
+    cancelHide();
     if(locked) return;
     openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) hidePanel(); });
+  el.addEventListener('mouseleave', () => { scheduleHide(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     const myAxis = TENSIONAL_AXIS[id]; // 'vert' or 'horiz'
