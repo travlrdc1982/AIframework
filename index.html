@@ -57,32 +57,42 @@ body { background: transparent; }
 #panel {
   display: none;
   position: absolute;
-  width: 44%;
-  max-width: 460px;
-  padding: 14px 20px;
-  background: rgba(249, 248, 245, 0.82);
+  width: clamp(300px, 48%, 540px);
+  padding: 18px 26px 20px;
+  background: rgba(249, 248, 245, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-left: 4px solid #9e1b32;
   border-radius: 0 6px 6px 0;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.2);
   z-index: 20;
   pointer-events: auto;
   animation: fadeIn 0.2s ease;
 }
-@keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 #panel.open { display: block; }
-#panel.pos-tl { top: 4%;   left: 4%;  right: auto; bottom: auto; }
-#panel.pos-tr { top: 4%;   right: 4%; left: auto;  bottom: auto; }
-#panel.pos-bl { bottom: 4%; left: 4%; right: auto; top: auto;    }
-#panel.pos-br { bottom: 4%; right: 4%; left: auto; top: auto;    }
-#panel-close { position:absolute; top:12px; right:16px; cursor:pointer; background:none; border:none; font-size:1.1rem; color:#888; }
-#panel-title { font-family:"Playfair Display",serif; font-weight:600; font-size:1.1rem; color:#001f3f; margin-bottom:8px; padding-right: 24px; }
+#panel-close { position:absolute; top:10px; right:14px; cursor:pointer; background:none; border:none; font-size:1.2rem; color:#888; line-height:1; }
+#panel-title { font-family:"Playfair Display",serif; font-weight:600; font-size:1.2rem; color:#001f3f; padding-right: 24px; line-height: 1.25; }
+#panel-pill {
+  display: none;
+  margin: 10px 0 14px;
+  padding: 3px 12px 4px;
+  background: rgba(158, 27, 50, 0.10);
+  color: #9e1b32;
+  font-family: "Bitter", serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  border: 1px solid rgba(158, 27, 50, 0.4);
+  border-radius: 999px;
+  width: fit-content;
+}
+#panel-pill.show { display: inline-block; }
 #panel-body  {
-  font-family:Georgia,serif; font-size:0.9rem; color:#333; line-height:1.6;
-  max-height: 190px;
+  font-family:Georgia,serif; font-size:1rem; color:#333; line-height:1.6;
+  max-height: 460px;
   overflow-y: auto;
-  padding-right: 16px;
+  padding-right: 12px;
   white-space: pre-line;
   scrollbar-width: thin;
   scrollbar-color: #9e1b32 #f0ece3;
@@ -151,6 +161,7 @@ body { background: transparent; }
     <div id="panel">
       <button id="panel-close">✕</button>
       <div id="panel-title"></div>
+      <div id="panel-pill"></div>
       <div id="panel-body"></div>
     </div>
 
@@ -452,26 +463,88 @@ function reset() {
 }
 
 // ── PANEL ──
-// Card placement per trigger — opposite corner from the element so the card
-// never covers the graphic the user is hovering/clicking.
-const CARD_POS = {
-  intro: 'br',
-  rep: 'br', auth: 'br', national: 'br',
-  fed: 'tr', maj: 'tr', democratic: 'tr',
-  ci: 'br', lib: 'br', liberty: 'br',
-  me: 'bl', eq: 'bl', equality: 'bl',
+// Pill label categories shown under the card title.
+const PILL = {
+  rep: 'THE CARDINAL IDEAS',
+  fed: 'THE CARDINAL IDEAS',
+  ci:  'THE CARDINAL IDEAS',
+  me:  'THE CARDINAL IDEAS',
+  auth: 'IDEOLOGICAL DEALIGNMENT',
+  maj:  'IDEOLOGICAL DEALIGNMENT',
+  lib:  'IDEOLOGICAL DEALIGNMENT',
+  eq:   'IDEOLOGICAL DEALIGNMENT',
+  national:   'TENSIONAL IDEAS',
+  democratic: 'TENSIONAL IDEAS',
+  liberty:    'TENSIONAL IDEAS',
+  equality:   'TENSIONAL IDEAS',
 };
-const POS_CLASSES = ['pos-tl','pos-tr','pos-bl','pos-br'];
+
+// Map content id → DOM element used to anchor the card position.
+const TRIGGER_EL = {
+  intro: 'flag-circle',
+  rep: 'rep', fed: 'fed', ci: 'ci', me: 'me',
+  auth: 'auth', maj: 'maj', lib: 'lib', eq: 'eq',
+  national: 't-national', democratic: 't-democratic',
+  liberty: 't-liberty', equality: 't-equality',
+};
+
+function positionCard(id) {
+  const panel = g('panel');
+  // Clear any prior positioning
+  panel.style.top = panel.style.right = panel.style.bottom = panel.style.left = panel.style.transform = '';
+
+  if(id === 'intro') {
+    // Center trigger has no adjacent side that avoids overlap — pin to corner.
+    panel.style.right = '4%';
+    panel.style.bottom = '4%';
+    return;
+  }
+
+  const trigger = g(TRIGGER_EL[id]);
+  const diagram = g('diagram');
+  if(!trigger || !diagram) { panel.style.right = '4%'; panel.style.bottom = '4%'; return; }
+
+  const dRect = diagram.getBoundingClientRect();
+  const tRect = trigger.getBoundingClientRect();
+  const tCx = (tRect.left + tRect.right) / 2 - dRect.left;
+  const tCy = (tRect.top + tRect.bottom) / 2 - dRect.top;
+  const cx = dRect.width / 2;
+  const cy = dRect.height / 2;
+  const dx = tCx - cx;
+  const dy = tCy - cy;
+  const gap = 14;
+
+  // Pick the axis (vertical vs horizontal) the trigger is dominant on, then
+  // place the card on the opposite side of the trigger along that axis.
+  if(Math.abs(dy) >= Math.abs(dx)) {
+    if(dy < 0) panel.style.top    = (tRect.bottom - dRect.top + gap) + 'px';
+    else       panel.style.bottom = (dRect.height - (tRect.top - dRect.top) + gap) + 'px';
+    panel.style.left = '50%';
+    panel.style.transform = 'translateX(-50%)';
+  } else {
+    if(dx < 0) panel.style.left  = (tRect.right - dRect.left + gap) + 'px';
+    else       panel.style.right = (dRect.width - (tRect.left - dRect.left) + gap) + 'px';
+    panel.style.top = '50%';
+    panel.style.transform = 'translateY(-50%)';
+  }
+}
 
 function openPanel(id) {
   const d = CONTENT[id];
   if(!d) return;
   g('panel-title').textContent = d.title;
   g('panel-body').textContent  = d.body;
-  const panel = g('panel');
-  POS_CLASSES.forEach(c => panel.classList.remove(c));
-  panel.classList.add('pos-' + (CARD_POS[id] || 'br'));
-  panel.classList.add('open');
+
+  const pill = g('panel-pill');
+  if(PILL[id]) {
+    pill.textContent = PILL[id];
+    pill.classList.add('show');
+  } else {
+    pill.classList.remove('show');
+  }
+
+  positionCard(id);
+  g('panel').classList.add('open');
 }
 function hidePanel() {
   g('panel').classList.remove('open');
