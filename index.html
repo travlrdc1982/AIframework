@@ -588,19 +588,8 @@ function closePanel() {
   hidePanel();
 }
 
-// Grace period so the user can move the cursor from a trigger to the card
-// without the card vanishing mid-traverse.
-let hideTimer = null;
-function scheduleHide() {
-  clearTimeout(hideTimer);
-  hideTimer = setTimeout(() => { if(!locked) { reset(); hidePanel(); } }, 220);
-}
-function cancelHide() { clearTimeout(hideTimer); }
-
 g('panel-close').addEventListener('click', e => { e.stopPropagation(); closePanel(); });
 g('panel').addEventListener('click', e => { e.stopPropagation(); });
-g('panel').addEventListener('mouseenter', cancelHide);
-g('panel').addEventListener('mouseleave', scheduleHide);
 
 // ── HELPER: highlight one cardinal, dim others ──
 function highlightCardinal(id) {
@@ -617,11 +606,10 @@ function highlightCardinal(id) {
   });
 }
 
-// ── 1. FRINGE HOVER + CLICK ──
+// ── 1. FRINGE HOVER (visual only) + CLICK (opens card) ──
 ['auth','maj','lib','eq'].forEach(id => {
   const el = g(id);
   el.addEventListener('mouseenter', () => {
-    cancelHide();
     if(locked) return;
     reset();
     // Stretch relevant arrow
@@ -645,9 +633,8 @@ function highlightCardinal(id) {
       g(cid).style.opacity = '0.2';
       g(cid).style.filter  = 'blur(1.5px)';
     });
-    openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) reset(); scheduleHide(); });
+  el.addEventListener('mouseleave', () => { if(!locked) reset(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === id) { closePanel(); return; }
@@ -678,17 +665,15 @@ function highlightCardinal(id) {
   });
 });
 
-// ── 3 & 4. CARDINAL HOVER + CLICK ──
+// ── 3 & 4. CARDINAL HOVER (visual only) + CLICK (opens card) ──
 ['rep','fed','ci','me'].forEach(id => {
   const el = g(id);
   el.addEventListener('mouseenter', () => {
-    cancelHide();
     if(locked) return;
     reset();
     highlightCardinal(id);
-    openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) reset(); scheduleHide(); });
+  el.addEventListener('mouseleave', () => { if(!locked) reset(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === id) { closePanel(); return; }
@@ -708,12 +693,6 @@ function highlightCardinal(id) {
 ].forEach(({id, el: elId}) => {
   const el = g(elId);
   if(!el) return;
-  el.addEventListener('mouseenter', () => {
-    cancelHide();
-    if(locked) return;
-    openPanel(id);
-  });
-  el.addEventListener('mouseleave', () => { scheduleHide(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     const myAxis = TENSIONAL_AXIS[id]; // 'vert' or 'horiz'
