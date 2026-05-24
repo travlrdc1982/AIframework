@@ -97,6 +97,16 @@ body { background: transparent; }
   scrollbar-width: thin;
   scrollbar-color: #9e1b32 #f0ece3;
 }
+
+/* Smaller variant for IDEOLOGICAL DEALIGNMENT (fringe) cards: ~33% smaller */
+#panel.small { width: clamp(220px, 32%, 360px); padding: 12px 18px 14px; }
+#panel.small #panel-close { font-size: 1rem; top: 8px; right: 12px; }
+#panel.small #panel-title { font-size: 0.95rem; padding-right: 20px; }
+#panel.small #panel-pill { font-size: 0.55rem; margin: 7px 0 10px; padding: 2px 9px 3px; letter-spacing: 0.12em; }
+#panel.small #panel-body { font-size: 0.82rem; line-height: 1.55; max-height: 320px; padding-right: 10px; }
+
+/* Structural-axis card sits on the right edge; narrowed so it clears rep/fed */
+#panel.axis-narrow { width: clamp(260px, 30%, 400px); }
 #panel-body::-webkit-scrollbar { width: 8px; }
 #panel-body::-webkit-scrollbar-track { background: #f0ece3; border-radius: 4px; }
 #panel-body::-webkit-scrollbar-thumb { background: #9e1b32; border-radius: 4px; }
@@ -481,22 +491,40 @@ const PILL = {
 
 // Map content id → DOM element used to anchor the card position.
 const TRIGGER_EL = {
-  intro: 'flag-circle',
   rep: 'rep', fed: 'fed', ci: 'ci', me: 'me',
   auth: 'auth', maj: 'maj', lib: 'lib', eq: 'eq',
   national: 't-national', democratic: 't-democratic',
   liberty: 't-liberty', equality: 't-equality',
 };
 
+// Fringe (ideological dealignment) cards use the smaller variant.
+const SMALL_IDS = new Set(['auth','maj','lib','eq']);
+
+// Structural axis (national/democratic) cards must not cover the vertical
+// pair of cardinals (rep, fed). Philosophical axis (liberty/equality) cards
+// likewise must not cover the horizontal pair (ci, me).
+const STRUCTURAL_AXIS_IDS  = new Set(['national','democratic']);
+const PHILOSOPHICAL_AXIS_IDS = new Set(['liberty','equality']);
+
 function positionCard(id) {
   const panel = g('panel');
   // Clear any prior positioning
   panel.style.top = panel.style.right = panel.style.bottom = panel.style.left = panel.style.transform = '';
 
-  if(id === 'intro') {
-    // Center trigger has no adjacent side that avoids overlap — pin to corner.
-    panel.style.right = '4%';
-    panel.style.bottom = '4%';
+  if(STRUCTURAL_AXIS_IDS.has(id)) {
+    // Park on the right edge, vertically centered — leaves rep (top) and
+    // fed (bottom) cardinals exposed, only overlaps me on the right.
+    panel.style.right = '3%';
+    panel.style.top = '50%';
+    panel.style.transform = 'translateY(-50%)';
+    return;
+  }
+  if(PHILOSOPHICAL_AXIS_IDS.has(id)) {
+    // Park along the top, horizontally centered — leaves ci (left) and
+    // me (right) cardinals exposed, only overlaps rep at the top.
+    panel.style.left = '50%';
+    panel.style.top = '3%';
+    panel.style.transform = 'translateX(-50%)';
     return;
   }
 
@@ -535,6 +563,11 @@ function openPanel(id) {
   g('panel-title').textContent = d.title;
   g('panel-body').textContent  = d.body;
 
+  const panel = g('panel');
+  panel.classList.remove('small','axis-narrow');
+  if(SMALL_IDS.has(id))             panel.classList.add('small');
+  if(STRUCTURAL_AXIS_IDS.has(id))   panel.classList.add('axis-narrow');
+
   const pill = g('panel-pill');
   if(PILL[id]) {
     pill.textContent = PILL[id];
@@ -544,7 +577,7 @@ function openPanel(id) {
   }
 
   positionCard(id);
-  g('panel').classList.add('open');
+  panel.classList.add('open');
 }
 function hidePanel() {
   g('panel').classList.remove('open');
@@ -623,12 +656,11 @@ function highlightCardinal(id) {
   });
 });
 
-// ── 2. CENTER HOVER + CLICK (intro) ──
+// ── 2. CENTER HOVER (visual emphasis only — intro card eliminated) ──
 ['center-zone','flag-circle'].forEach(cid => {
   const el = g(cid);
   if(!el) return;
   el.addEventListener('mouseenter', () => {
-    cancelHide();
     if(locked) return;
     reset();
     g('flag-circle').classList.add('pulsing');
@@ -638,14 +670,11 @@ function highlightCardinal(id) {
       g(id).style.boxShadow = SHADOW[id];
     });
     ['auth','maj','lib','eq'].forEach(id => { g(id).style.opacity = '0.3'; });
-    openPanel('intro');
   });
-  el.addEventListener('mouseleave', () => { if(!locked) reset(); scheduleHide(); });
+  el.addEventListener('mouseleave', () => { if(!locked) reset(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
-    if(locked === 'intro') { closePanel(); return; }
-    locked = 'intro';
-    openPanel('intro');
+    if(locked) closePanel();
   });
 });
 
