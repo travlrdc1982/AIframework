@@ -16,7 +16,7 @@ body { background: transparent; }
 #flag-circle { z-index: 1; }
 #ai-bubble { z-index: 10; pointer-events: none; }
 #arrow-blue, #arrow-red { z-index: 2; }
-.cardinal { z-index: 3; cursor: pointer; border-radius: 6px; display: flex; align-items: center; opacity: 0.5; transition: opacity 0.3s ease, box-shadow 0.3s ease; }
+.cardinal { z-index: 3; cursor: pointer; border-radius: 6px; display: flex; align-items: center; opacity: 0.78; transition: opacity 0.3s ease, box-shadow 0.3s ease; }
 
 .fringe { z-index: 4; cursor: pointer; border-radius: 30px; display: flex; align-items: center; justify-content: center; opacity: 0.82; transition: opacity 0.4s; }
 .t-vert, .t-horiz { z-index: 5; }
@@ -57,8 +57,8 @@ body { background: transparent; }
 #panel {
   display: none;
   position: absolute;
-  width: clamp(300px, 48%, 540px);
-  padding: 18px 26px 20px;
+  width: clamp(375px, 60%, 675px);
+  padding: 22px 32px 24px;
   background: rgba(249, 248, 245, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -71,16 +71,16 @@ body { background: transparent; }
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 #panel.open { display: block; }
-#panel-close { position:absolute; top:10px; right:14px; cursor:pointer; background:none; border:none; font-size:1.2rem; color:#888; line-height:1; }
-#panel-title { font-family:"Playfair Display",serif; font-weight:600; font-size:1.2rem; color:#001f3f; padding-right: 24px; line-height: 1.25; }
+#panel-close { position:absolute; top:10px; right:14px; cursor:pointer; background:none; border:none; font-size:1.4rem; color:#888; line-height:1; }
+#panel-title { font-family:"Playfair Display",serif; font-weight:600; font-size:1.5rem; color:#001f3f; padding-right: 28px; line-height: 1.25; }
 #panel-pill {
   display: none;
-  margin: 10px 0 14px;
-  padding: 3px 12px 4px;
+  margin: 12px 0 18px;
+  padding: 4px 14px 5px;
   background: rgba(158, 27, 50, 0.10);
   color: #9e1b32;
   font-family: "Bitter", serif;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   font-weight: 400;
   letter-spacing: 0.14em;
   border: 1px solid rgba(158, 27, 50, 0.4);
@@ -89,10 +89,10 @@ body { background: transparent; }
 }
 #panel-pill.show { display: inline-block; }
 #panel-body  {
-  font-family:Georgia,serif; font-size:1rem; color:#333; line-height:1.6;
-  max-height: 460px;
+  font-family:Georgia,serif; font-size:1.25rem; color:#333; line-height:1.55;
+  max-height: 575px;
   overflow-y: auto;
-  padding-right: 12px;
+  padding-right: 14px;
   white-space: pre-line;
   scrollbar-width: thin;
   scrollbar-color: #9e1b32 #f0ece3;
@@ -229,8 +229,8 @@ function layout() {
 
   // ── CARDINAL BOXES ──
   // CI has virtually no padding; its size sets all others
-  const cardPad = 6;  // px, nearly zero
-  const cardFs  = 14; // px font size (15 × 0.7 = 30% smaller)
+  const cardPad = 9;  // a touch more breathing room
+  const cardFs  = 18; // larger, more prominent cardinal labels
 
   // Size all boxes with approved font, measure CI
   ['rep','fed','ci','me'].forEach(id => {
@@ -439,7 +439,7 @@ const TENSIONAL_SIDE = {
 function reset() {
   ['rep','fed','ci','me'].forEach(id => {
     const el = g(id);
-    el.style.opacity   = '0.5';
+    el.style.opacity   = '0.78';
     el.style.boxShadow = 'none';
     el.style.filter    = '';
   });
@@ -465,10 +465,10 @@ function reset() {
 // ── PANEL ──
 // Pill label categories shown under the card title.
 const PILL = {
-  rep: 'THE CARDINAL IDEAS',
-  fed: 'THE CARDINAL IDEAS',
-  ci:  'THE CARDINAL IDEAS',
-  me:  'THE CARDINAL IDEAS',
+  rep: 'THE CARDINAL VALUES',
+  fed: 'THE CARDINAL VALUES',
+  ci:  'THE CARDINAL VALUES',
+  me:  'THE CARDINAL VALUES',
   auth: 'IDEOLOGICAL DEALIGNMENT',
   maj:  'IDEOLOGICAL DEALIGNMENT',
   lib:  'IDEOLOGICAL DEALIGNMENT',
