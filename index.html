@@ -53,16 +53,24 @@ body { background: transparent; }
 }
 .pulsing { animation: pulse 2s ease-in-out infinite; }
 
-/* Info panel */
+/* Info card overlay (replaces former bottom panel) */
 #panel {
   display: none;
-  width: 100%; margin-top: 16px;
-  padding: 20px 28px;
-  background: #f9f8f5;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 10px;
+  padding: 16px 22px;
+  background: rgba(249, 248, 245, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-left: 4px solid #9e1b32;
   border-radius: 0 6px 6px 0;
-  position: relative;
-  animation: fadeIn 0.3s ease;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  z-index: 20;
+  pointer-events: auto;
+  animation: fadeIn 0.2s ease;
 }
 @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 #panel.open { display: block; }
@@ -137,15 +145,15 @@ body { background: transparent; }
     <div id="t-liberty" class="t-horiz">Liberty</div>
     <div id="t-equality" class="t-horiz">Equality</div>
 
+    <!-- INFO CARD OVERLAY -->
+    <div id="panel">
+      <button id="panel-close">✕</button>
+      <div id="panel-title"></div>
+      <div id="panel-body"></div>
+    </div>
+
   </div>
 </div>
-
-  <!-- INFO PANEL -->
-  <div id="panel">
-    <button id="panel-close">✕</button>
-    <div id="panel-title"></div>
-    <div id="panel-body"></div>
-  </div>
 
 <script>
 function layout() {
@@ -449,13 +457,17 @@ function openPanel(id) {
   g('panel-body').textContent  = d.body;
   g('panel').classList.add('open');
 }
+function hidePanel() {
+  g('panel').classList.remove('open');
+}
 function closePanel() {
-  // Instead of hiding, return to the default intro state
   locked = null;
   reset();
-  openPanel('intro');
+  hidePanel();
 }
-g('panel-close').addEventListener('click', closePanel);
+g('panel-close').addEventListener('click', e => { e.stopPropagation(); closePanel(); });
+g('panel').addEventListener('click', e => { e.stopPropagation(); });
+g('panel').addEventListener('mouseenter', () => { /* keep card visible while pointer is over it */ });
 
 // ── HELPER: highlight one cardinal, dim others ──
 function highlightCardinal(id) {
@@ -499,8 +511,9 @@ function highlightCardinal(id) {
       g(cid).style.opacity = '0.2';
       g(cid).style.filter  = 'blur(1.5px)';
     });
+    openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) reset(); });
+  el.addEventListener('mouseleave', () => { if(!locked) { reset(); hidePanel(); } });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === id) { closePanel(); return; }
@@ -523,12 +536,14 @@ function highlightCardinal(id) {
       g(id).style.boxShadow = SHADOW[id];
     });
     ['auth','maj','lib','eq'].forEach(id => { g(id).style.opacity = '0.3'; });
+    openPanel('intro');
   });
-  el.addEventListener('mouseleave', () => { if(!locked) reset(); });
+  el.addEventListener('mouseleave', () => { if(!locked) { reset(); hidePanel(); } });
   el.addEventListener('click', e => {
     e.stopPropagation();
-    // If something is locked, return to intro; if already on intro, do nothing
-    if(locked) closePanel();
+    if(locked === 'intro') { closePanel(); return; }
+    locked = 'intro';
+    openPanel('intro');
   });
 });
 
@@ -539,8 +554,9 @@ function highlightCardinal(id) {
     if(locked) return;
     reset();
     highlightCardinal(id);
+    openPanel(id);
   });
-  el.addEventListener('mouseleave', () => { if(!locked) reset(); });
+  el.addEventListener('mouseleave', () => { if(!locked) { reset(); hidePanel(); } });
   el.addEventListener('click', e => {
     e.stopPropagation();
     if(locked === id) { closePanel(); return; }
@@ -560,6 +576,11 @@ function highlightCardinal(id) {
 ].forEach(({id, el: elId}) => {
   const el = g(elId);
   if(!el) return;
+  el.addEventListener('mouseenter', () => {
+    if(locked) return;
+    openPanel(id);
+  });
+  el.addEventListener('mouseleave', () => { if(!locked) hidePanel(); });
   el.addEventListener('click', e => {
     e.stopPropagation();
     const myAxis = TENSIONAL_AXIS[id]; // 'vert' or 'horiz'
@@ -619,8 +640,7 @@ g('diagram').addEventListener('click', () => {
   if(locked) closePanel();
 });
 
-// ── INITIAL STATE: show intro by default ──
-openPanel('intro');
+// ── INITIAL STATE: no card shown; cards appear on hover or click ──
 </script>
 </body>
 </html>
