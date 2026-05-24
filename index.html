@@ -53,16 +53,19 @@ body { background: transparent; }
 }
 .pulsing { animation: pulse 2s ease-in-out infinite; }
 
-/* Info card overlay (replaces former bottom panel) */
+/* Info card overlay (replaces former bottom panel) — fully proportional
+   to diagram width via the --diag-w custom property set in layout(). */
 #panel {
   display: none;
   position: absolute;
-  width: clamp(375px, 60%, 675px);
-  padding: 22px 32px 24px;
+  width: clamp(280px, 38%, 540px);
+  padding: calc(var(--diag-w, 1400px) * 0.013)
+           calc(var(--diag-w, 1400px) * 0.019)
+           calc(var(--diag-w, 1400px) * 0.0145);
   background: rgba(249, 248, 245, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-left: 4px solid #9e1b32;
+  border-left: calc(var(--diag-w, 1400px) * 0.003) solid #9e1b32;
   border-radius: 0 6px 6px 0;
   box-shadow: 0 8px 28px rgba(0,0,0,0.2);
   z-index: 20;
@@ -71,46 +74,48 @@ body { background: transparent; }
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 #panel.open { display: block; }
-#panel-close { position:absolute; top:10px; right:14px; cursor:pointer; background:none; border:none; font-size:1.4rem; color:#888; line-height:1; }
-#panel-title { font-family:"Playfair Display",serif; font-weight:600; font-size:1.5rem; color:#001f3f; padding-right: 28px; line-height: 1.25; }
+#panel-close {
+  position:absolute;
+  top: calc(var(--diag-w, 1400px) * 0.0072);
+  right: calc(var(--diag-w, 1400px) * 0.01);
+  cursor:pointer; background:none; border:none; color:#888; line-height:1;
+  font-size: calc(var(--diag-w, 1400px) * 0.012);
+}
+#panel-title {
+  font-family:"Playfair Display",serif; font-weight:600; color:#001f3f; line-height: 1.25;
+  font-size: calc(var(--diag-w, 1400px) * 0.014);
+  padding-right: calc(var(--diag-w, 1400px) * 0.018);
+}
 #panel-pill {
   display: none;
-  margin: 12px 0 18px;
-  padding: 4px 14px 5px;
+  margin: calc(var(--diag-w, 1400px) * 0.0072) 0 calc(var(--diag-w, 1400px) * 0.01);
+  padding: calc(var(--diag-w, 1400px) * 0.0022) calc(var(--diag-w, 1400px) * 0.0086) calc(var(--diag-w, 1400px) * 0.003);
   background: rgba(158, 27, 50, 0.10);
   color: #9e1b32;
   font-family: "Bitter", serif;
-  font-size: 0.875rem;
   font-weight: 400;
   letter-spacing: 0.14em;
   border: 1px solid rgba(158, 27, 50, 0.4);
   border-radius: 999px;
   width: fit-content;
+  font-size: calc(var(--diag-w, 1400px) * 0.008);
 }
 #panel-pill.show { display: inline-block; }
 #panel-body  {
-  font-family:Georgia,serif; font-size:1.25rem; color:#333; line-height:1.55;
-  max-height: 575px;
-  overflow-y: auto;
-  padding-right: 14px;
+  font-family:Georgia,serif; color:#333; line-height:1.55;
   white-space: pre-line;
-  scrollbar-width: thin;
-  scrollbar-color: #9e1b32 #f0ece3;
+  font-size: calc(var(--diag-w, 1400px) * 0.0115);
 }
 
 /* Smaller variant for IDEOLOGICAL DEALIGNMENT (fringe) cards: ~33% smaller */
-#panel.small { width: clamp(220px, 32%, 360px); padding: 12px 18px 14px; }
-#panel.small #panel-close { font-size: 1rem; top: 8px; right: 12px; }
-#panel.small #panel-title { font-size: 0.95rem; padding-right: 20px; }
-#panel.small #panel-pill { font-size: 0.55rem; margin: 7px 0 10px; padding: 2px 9px 3px; letter-spacing: 0.12em; }
-#panel.small #panel-body { font-size: 0.82rem; line-height: 1.55; max-height: 320px; padding-right: 10px; }
+#panel.small { width: clamp(200px, 26%, 380px); padding: calc(var(--diag-w, 1400px) * 0.009) calc(var(--diag-w, 1400px) * 0.013); }
+#panel.small #panel-close { font-size: calc(var(--diag-w, 1400px) * 0.0095); }
+#panel.small #panel-title { font-size: calc(var(--diag-w, 1400px) * 0.0105); padding-right: calc(var(--diag-w, 1400px) * 0.014); }
+#panel.small #panel-pill  { font-size: calc(var(--diag-w, 1400px) * 0.0062); letter-spacing: 0.12em; }
+#panel.small #panel-body  { font-size: calc(var(--diag-w, 1400px) * 0.0085); line-height: 1.5; }
 
 /* Structural-axis card sits on the right edge; narrowed so it clears rep/fed */
-#panel.axis-narrow { width: clamp(260px, 30%, 400px); }
-#panel-body::-webkit-scrollbar { width: 8px; }
-#panel-body::-webkit-scrollbar-track { background: #f0ece3; border-radius: 4px; }
-#panel-body::-webkit-scrollbar-thumb { background: #9e1b32; border-radius: 4px; }
-#panel-body::-webkit-scrollbar-thumb:hover { background: #7a0020; }
+#panel.axis-narrow { width: clamp(240px, 28%, 400px); }
 
 /* Tensional labels: clickable cursor */
 .t-vert, .t-horiz { cursor: pointer; }
@@ -184,6 +189,8 @@ function layout() {
   const W = diag.offsetWidth;
   const H = diag.offsetHeight;
   const shorter = Math.min(W, H);
+  // Expose diagram width to CSS so card padding/fonts scale proportionally.
+  diag.style.setProperty('--diag-w', W + 'px');
 
   const L  = shorter * 0.818;   // arrow length (both same)
   const T  = shorter * 0.0875;  // arrow thickness
@@ -239,8 +246,10 @@ function layout() {
 
   // ── CARDINAL BOXES ──
   // CI has virtually no padding; its size sets all others
-  const cardPad = 9;  // a touch more breathing room
-  const cardFs  = 18; // larger, more prominent cardinal labels
+  // Proportional to diagram: at ~1100px shorter dimension these come out
+  // to ~9 and ~18, matching the previous fixed values.
+  const cardPad = Math.max(4, Math.round(shorter * 0.0082));
+  const cardFs  = Math.max(9, Math.round(shorter * 0.0164));
 
   // Size all boxes with approved font, measure CI
   ['rep','fed','ci','me'].forEach(id => {
